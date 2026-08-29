@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniHealth OS - Enterprise Healthcare & Hospital Management Platform</title>
+  
+  <!-- Core Design System Stylesheets -->
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/clinical-theme.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <!-- Global Emergency Code Blue Banner (Hidden by default) -->
+  <div id="ed-code-blue-banner" style="display: none; background: #dc2626; color: white; padding: 10px 24px; font-weight: 800; font-size: 14px; justify-content: space-between; align-items: center; z-index: 999; animation: pulseAlarm 0.8s infinite alternate;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 20px;">🚨</span>
+      <span>CODE BLUE EMERGENCY ACTIVATED: MEDICAL RESUSCITATION IN PROGRESS (TRAUMA BAY 1)</span>
+    </div>
+    <button class="btn btn-sm btn-secondary" onclick="EmergencyModule.toggleCodeBlue()">Stand-Down Code Blue</button>
+  </div>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="app-sidebar">
+      <div class="sidebar-header">
+        <div class="brand-icon">⚕</div>
+        <div class="brand-text">Omni<span>Health</span> OS</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">Clinical Portals</div>
+        <a class="sidebar-nav-item active" data-module="ehr">
+          <span class="nav-icon">📋</span> Electronic Health Records
+        </a>
+        <a class="sidebar-nav-item" data-module="emergency">
+          <span class="nav-icon">🚨</span> Emergency & Triage (ESI)
+        </a>
+        <a class="sidebar-nav-item" data-module="telemetry">
+          <span class="nav-icon">📈</span> ICU Telemetry (60 FPS)
+        </a>
+        <a class="sidebar-nav-item" data-module="pacs">
+          <span class="nav-icon">🩻</span> PACS / DICOM Viewer
+        </a>
+
+        <div class="nav-section-title">Diagnostics & Care</div>
+        <a class="sidebar-nav-item" data-module="pharmacy">
+          <span class="nav-icon">💊</span> Pharmacy & Interactions
+        </a>
+        <a class="sidebar-nav-item" data-module="laboratory">
+          <span class="nav-icon">🧪</span> Laboratory (LIS)
+        </a>
+        <a class="sidebar-nav-item" data-module="appointments">
+          <span class="nav-icon">📅</span> Outpatient Scheduling
+        </a>
+        <a class="sidebar-nav-item" data-module="telehealth">
+          <span class="nav-icon">📹</span> Virtual Telehealth Suite
+        </a>
+        <a class="sidebar-nav-item" data-module="symptom-checker">
+          <span class="nav-icon">🤖</span> AI Symptom Checker
+        </a>
+
+        <div class="nav-section-title">Operations & Admin</div>
+        <a class="sidebar-nav-item" data-module="floorplan">
+          <span class="nav-icon">🏥</span> Ward Floor Plan & Beds
+        </a>
+        <a class="sidebar-nav-item" data-module="billing">
+          <span class="nav-icon">💳</span> Medical Billing & Claims
+        </a>
+        <a class="sidebar-nav-item" data-module="analytics">
+          <span class="nav-icon">📊</span> Analytics & Epidemiology
+        </a>
+        <a class="sidebar-nav-item" data-module="audit">
+          <span class="nav-icon">🔒</span> HIPAA Audit Security
+        </a>
+        <a class="sidebar-nav-item" data-module="settings">
+          <span class="nav-icon">⚙️</span> System Settings & RBAC
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>OmniHealth v4.8 LTS</span>
+        <span class="badge badge-success">Online</span>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="app-main">
+      <!-- Topbar Header -->
+      <header class="app-topbar">
+        <div class="topbar-left">
+          <span class="search-icon-pos">🔍</span>
+          <input type="text" id="topbar-global-search" class="topbar-search-input" placeholder="Search patient name, MRN, ICD-10 code...">
+          <div id="topbar-search-dropdown" class="search-dropdown"></div>
+        </div>
+
+        <div class="topbar-right">
+          <div id="topbar-live-clock" class="live-clock">--:--:--</div>
+
+          <!-- Quick RBAC Persona Switcher -->
+          <select id="topbar-role-select" class="form-select" style="width: auto; padding: 6px 12px; font-size: 12px;">
+            <option value="doctor">Dr. S. Jenkins (Attending)</option>
+            <option value="nurse">Nurse J. Adams (Triage)</option>
+            <option value="pharmacist">Dr. A. Vance (PharmD)</option>
+            <option value="lab_tech">M. Reed (Lab Scientist)</option>
+            <option value="billing">E. Martinez (Billing Admin)</option>
+            <option value="patient">Eleanor Vance (Patient)</option>
+            <option value="admin">Chief Medical Officer (Admin)</option>
+          </select>
+
+          <div class="user-profile-badge">
+            <div class="user-avatar">MD</div>
+            <div>
+              <div id="topbar-user-name" class="user-name-text">Dr. Sarah Jenkins, MD</div>
+              <div id="topbar-user-badge" class="text-xs text-sky-400 font-bold">Attending Physician</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dynamic Content Viewport -->
+      <section class="app-content">
+
+        <!-- =========================================================================
+             MODULE 1: ELECTRONIC HEALTH RECORDS (EHR) & CLINICAL DECISION SUPPORT
+             ========================================================================= -->
+        <div id="view-ehr" class="module-view">
+          <!-- Patient Selector Bar -->
+          <div class="flex justify-between items-center mb-4">
+            <div class="flex items-center gap-3">
+              <label class="form-label mb-0">Select Inpatient Chart:</label>
+              <select id="ehr-patient-select" class="form-select" style="min-width: 380px;"></select>
+            </div>
+            <div class="flex gap-2">
+              <button id="ehr-add-vital-btn" class="btn btn-sm btn-outline-primary">+ Record Vitals</button>
+              <button id="ehr-add-allergy-btn" class="btn btn-sm btn-outline-secondary">+ Add Allergy</button>
+              <button id="ehr-export-summary-btn" class="btn btn-sm btn-primary">📄 Export Clinical Summary</button>
+            </div>
+          </div>
+
+          <!-- Clinical Decision Support Alert Banners -->
+          <div id="ehr-cdss-alerts"></div>
+
+          <!-- Patient Header Dossier -->
+          <div class="ehr-dossier-header">
+            <div class="ehr-patient-title">
+              <h2 id="ehr-patient-name">Eleanor Vance</h2>
+              <div class="ehr-meta-pills">
+                <span>MRN: <strong id="ehr-patient-mrn" class="font-mono">MRN-884920</strong></span>
+                <span id="ehr-patient-dob">1964-05-14 (62 yrs, Female)</span>
+                <span id="ehr-patient-blood">Blood: O+</span>
+                <span id="ehr-patient-ward">Cardiology • West Wing (Bed-304)</span>
+                <span id="ehr-patient-status" class="badge badge-primary">Admitted</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Allergies Section -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <span class="card-title">⚠️ Documented Patient Hypersensitivities & Allergies</span>
+            </div>
+            <div id="ehr-allergies-list" class="flex flex-wrap"></div>
+          </div>
+
+          <!-- Vitals Strip & Trend Graph -->
+          <div class="grid grid-cols-4 gap-3 mb-4">
+            <div class="vital-metric-card">
+              <div class="vital-metric-label">Heart Rate</div>
+              <div id="ehr-vital-hr" class="vital-metric-val text-sky-400">88 bpm</div>
+            </div>
+            <div class="vital-metric-card">
+              <div class="vital-metric-label">Blood Pressure</div>
+              <div id="ehr-vital-bp" class="vital-metric-val text-danger">142/92 mmHg</div>
+            </div>
+            <div class="vital-metric-card">
+              <div class="vital-metric-label">Respiration</div>
+              <div id="ehr-vital-rr" class="vital-metric-val text-warning">18 /min</div>
+            </div>
+            <div class="vital-metric-card">
+              <div class="vital-metric-label">SpO2 Saturation</div>
+              <div id="ehr-vital-spo2" class="vital-metric-val text-success">96%</div>
+            </div>
+          </div>
+
+          <!-- Canvas Trend Chart -->
+          <div class="card mb-4">
+            <canvas id="ehr-vital-chart-canvas" height="180" style="width: 100%; height: 180px;"></canvas>
+          </div>
+
+          <!-- Two Column Layout: Diagnoses/Meds & SOAP Notes -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Column 1: Problem List & Medications -->
+            <div>
+              <div class="card mb-4">
+                <div class="card-header">
+                  <span class="card-title">🩺 Active Problem List (ICD-10 Diagnoses)</span>
+                </div>
+                <div id="ehr-diagnoses-list"></div>
+              </div>
+
+              <div class="card mb-4">
+                <div class="card-header">
+                  <span class="card-title">💊 Active Inpatient Medication Regimen</span>
+                </div>
+                <div id="ehr-medications-list"></div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">🧪 Recent Diagnostic Lab Panels</span>
+                </div>
+                <div id="ehr-labs-preview-list"></div>
+              </div>
+            </div>
+
+            <!-- Column 2: SOAP Documentation Editor -->
+            <div>
+              <div class="card mb-4">
+                <div class="card-header">
+                  <span class="card-title">✍️ New Clinical Encounter SOAP Note</span>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">S - Subjective (Chief Complaint & History of Present Illness)</label>
+                  <textarea id="ehr-soap-s" class="form-textarea" placeholder="Patient reports symptom progression, pain quality, response to treatment..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">O - Objective (Physical Exam Findings & Vitals)</label>
+                  <textarea id="ehr-soap-o" class="form-textarea" placeholder="Physical examination, heart/lung auscultation, localized findings..."></textarea>
+                </div>
+                <div class="form-group" style="position: relative;">
+                  <label class="form-label">A - Assessment (ICD-10 Diagnostic Impression)</label>
+                  <input type="text" id="ehr-icd-search" class="form-input mb-1" placeholder="🔍 Search ICD-10 codes (e.g., Angina, Sepsis, I25.10)...">
+                  <div id="ehr-icd-results" class="icd-dropdown-results"></div>
+                  <textarea id="ehr-soap-a" class="form-textarea" placeholder="Primary diagnostic synthesis and differential clinical impressions..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">P - Plan (Orders, Therapy, Diagnostics, Follow-up)</label>
+                  <textarea id="ehr-soap-p" class="form-textarea" placeholder="Medication adjustments, diagnostic imaging orders, discharge planning..."></textarea>
+                </div>
+                <button id="ehr-save-soap-btn" class="btn btn-primary w-full">Sign & Record SOAP Note</button>
+              </div>
+
+              <!-- Past SOAP Notes Timeline -->
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">📜 Historical Clinical Encounter Notes</span>
+                </div>
+                <div id="ehr-soap-notes-container"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 2: EMERGENCY & TRIAGE (ESI 1-5)
+             ========================================================================= -->
+        <div id="view-emergency" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Emergency & Trauma Department</h2>
+              <div class="text-xs text-muted">Emergency Severity Index (ESI Levels 1 to 5) Live Board</div>
+            </div>
+            <div class="flex gap-2">
+              <select id="ed-triage-filter" class="form-select" style="width: auto;">
+                <option value="all">All Triage Categories</option>
+                <option value="1">ESI 1 - Resuscitation (Immediate)</option>
+                <option value="2">ESI 2 - Emergent (High Risk)</option>
+                <option value="3">ESI 3 - Urgent</option>
+                <option value="4">ESI 4 - Less Urgent</option>
+                <option value="5">ESI 5 - Non-Urgent</option>
+              </select>
+              <button id="ed-rapid-intake-btn" class="btn btn-primary">🚑 Rapid Triage Intake</button>
+              <button id="ed-code-blue-btn" class="btn btn-danger">🚨 Trigger Facility Code Blue</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="card" style="grid-column: span 2;">
+              <div class="card-header">
+                <span class="card-title">🏥 Active Emergency Department Bed Board</span>
+              </div>
+              <div id="ed-triage-board-list" class="ed-triage-grid"></div>
+            </div>
+
+            <div>
+              <div class="card mb-4">
+                <div class="card-header">
+                  <span class="card-title">🚑 Inbound Ambulance & MedFlight Dispatches</span>
+                </div>
+                <div id="ed-ambulance-list"></div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <span class="card-title">⚡ ED Fast-Track Resource Utilization</span>
+                </div>
+                <div class="text-sm">
+                  <div class="flex justify-between py-2 border-b border-slate-700">
+                    <span>Trauma Bays (1-2):</span>
+                    <strong class="text-danger">1 Occupied / 1 Ready</strong>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-slate-700">
+                    <span>CT Scanner Status:</span>
+                    <strong class="text-success">Available (STAT Clear)</strong>
+                  </div>
+                  <div class="flex justify-between py-2 border-b border-slate-700">
+                    <span>Blood Bank (O-Neg Units):</span>
+                    <strong class="text-sky-400">14 Units on Standby</strong>
+                  </div>
+                  <div class="flex justify-between py-2">
+                    <span>Average Door-to-Doctor:</span>
+                    <strong class="text-warning">14.2 Minutes</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 3: ICU 60FPS WAVEFORM TELEMETRY MONITOR
+             ========================================================================= -->
+        <div id="view-telemetry" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Multi-Parameter ICU Waveform Monitor (60 FPS)</h2>
+              <div class="text-xs text-muted">Hardware-Accelerated HTML5 Canvas with Native Web Audio Cardiac Beeps</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="form-label mb-0">Telemetry Feed:</label>
+              <select id="telemetry-patient-select" class="form-select" style="width: auto;"></select>
+              <label class="flex items-center gap-2 text-xs font-bold text-sky-400 cursor-pointer">
+                <input type="checkbox" id="telemetry-audio-toggle" checked> 🔊 Pulse Tone Audio
+              </label>
+            </div>
+          </div>
+
+          <div class="telemetry-monitor-container mb-4">
+            <!-- Waveform Canvas Screen -->
+            <div class="telemetry-screen-wrapper">
+              <canvas id="telemetry-canvas" class="telemetry-canvas"></canvas>
+              <div class="telemetry-channel-labels">
+                <div class="lead-label-ecg">LEAD II (mV) • 25 mm/s • HR</div>
+                <div class="lead-label-pleth">PLETH (SpO2 %) • IR Absorption</div>
+                <div class="lead-label-abp">ART (ABP mmHg) • Radial Line</div>
+              </div>
+            </div>
+
+            <!-- Digital Readout Parameter HUD -->
+            <div class="telemetry-hud-sidebar">
+              <div class="telemetry-digit-box digit-box-hr">
+                <div class="digit-label">Heart Rate (bpm)</div>
+                <div id="telemetry-readout-hr" class="digit-value">75</div>
+              </div>
+              <div class="telemetry-digit-box digit-box-spo2">
+                <div class="digit-label">SpO2 Saturation</div>
+                <div id="telemetry-readout-spo2" class="digit-value">98%</div>
+              </div>
+              <div class="telemetry-digit-box digit-box-bp">
+                <div class="digit-label">Arterial BP (Sys/Dia)</div>
+                <div id="telemetry-readout-bp" class="digit-value">120/80</div>
+                <span id="telemetry-readout-map" class="text-xs font-bold text-danger">(93)</span>
+              </div>
+              <div class="telemetry-digit-box digit-box-rr">
+                <div class="digit-label">Respiration (/min)</div>
+                <div id="telemetry-readout-rr" class="digit-value">16</div>
+              </div>
+              <div class="telemetry-digit-box digit-box-temp">
+                <div class="digit-label">Core Temp (°C)</div>
+                <div id="telemetry-readout-temp" class="digit-value">37.0°C</div>
+              </div>
+              <div class="telemetry-digit-box digit-box-etco2">
+                <div class="digit-label">ETCO2 (mmHg)</div>
+                <div class="digit-value">38</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Telemetry Interactive Controls -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🎛️ Physiological Waveform & Arrhythmia Simulator Controls</span>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="form-group">
+                <label class="form-label">Cardiac Rhythm & Arrhythmia Generator</label>
+                <select id="telemetry-arrhythmia-select" class="form-select font-bold">
+                  <option value="NSR" selected>Normal Sinus Rhythm (NSR - 75 bpm)</option>
+                  <option value="SINUS_TACH">Sinus Tachycardia (135 bpm)</option>
+                  <option value="SINUS_BRADY">Sinus Bradycardia (42 bpm)</option>
+                  <option value="VTACH">Ventricular Tachycardia (V-Tach - Lethal)</option>
+                  <option value="VFIB">Ventricular Fibrillation (V-Fib - Coarse)</option>
+                  <option value="ASYSTOLE">Asystole (Ventricular Standstill / Flatline)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Manual Heart Rate Titration (bpm)</label>
+                <input type="range" id="telemetry-hr-slider" min="30" max="220" value="75" class="w-full">
+              </div>
+              <div class="form-group">
+                <label class="form-label">SpO2 Oxygen Saturation Level (%)</label>
+                <input type="range" id="telemetry-spo2-slider" min="70" max="100" value="98" class="w-full">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 4: PACS / DIAGNOSTIC IMAGING WORKSTATION
+             ========================================================================= -->
+        <div id="view-pacs" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Diagnostic Imaging & PACS DICOM Workstation</h2>
+              <div class="text-xs text-muted">Canvas Radiography Console with Window/Level Contrast, Distance Ruler & ROI Density</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="form-label mb-0">Select Study:</label>
+              <select id="pacs-scan-select" class="form-select" style="min-width: 320px;"></select>
+            </div>
+          </div>
+
+          <div class="pacs-workstation-grid">
+            <!-- PACS Left Controls & Findings Report -->
+            <div class="pacs-sidebar">
+              <div>
+                <h3 id="pacs-scan-title" class="text-base font-bold text-sky-400">Chest X-Ray PA & Lateral</h3>
+                <div id="pacs-scan-modality" class="text-xs text-muted">Modality: CR</div>
+                <div id="pacs-scan-accession" class="text-xs text-muted">Acc #: ACC-2026-9901</div>
+                <div id="pacs-scan-date" class="text-xs text-muted">Acquired: 2026-08-26</div>
+                <div class="mt-2">
+                  <span id="pacs-highlight-badge" class="badge badge-warning">Cardiomegaly</span>
+                </div>
+              </div>
+
+              <div>
+                <label class="form-label">Window Level (Brightness)</label>
+                <input type="range" id="pacs-brightness-slider" min="-100" max="100" value="0" class="w-full">
+              </div>
+
+              <div>
+                <label class="form-label">Window Width (Contrast)</label>
+                <input type="range" id="pacs-contrast-slider" min="10" max="200" value="100" class="w-full">
+              </div>
+
+              <div class="flex gap-2">
+                <button id="pacs-invert-btn" class="btn btn-sm btn-secondary flex-1">🌓 Invert LUT</button>
+                <button id="pacs-reset-btn" class="btn btn-sm btn-outline-secondary">Reset</button>
+              </div>
+
+              <div class="card" style="padding: 12px; background: var(--bg-surface-elevated);">
+                <div class="text-xs font-bold text-muted mb-1 uppercase">Radiologist Final Report</div>
+                <p id="pacs-report-text" class="text-xs text-secondary" style="line-height: 1.6;">
+                  Heart size enlarged (cardiothoracic ratio > 0.52). No pulmonary consolidation, pneumothorax, or large pleural effusion.
+                </p>
+              </div>
+
+              <div id="pacs-roi-info" class="text-xs font-mono text-sky-400">
+                Measurement: Ready. Select Ruler or ROI Tool.
+              </div>
+            </div>
+
+            <!-- PACS Main Viewport Canvas -->
+            <div class="pacs-viewport-container">
+              <div class="pacs-toolbar">
+                <div class="flex gap-2">
+                  <button class="pacs-tool-btn active" data-tool="pan">✋ Pan / Move</button>
+                  <button class="pacs-tool-btn" data-tool="ruler">📏 Ruler (mm)</button>
+                  <button class="pacs-tool-btn" data-tool="roi">⭕ ROI Density</button>
+                  <button class="pacs-tool-btn" data-tool="window">🎚️ W/L Drag</button>
+                </div>
+                <div class="text-xs text-muted">Scroll mouse wheel to Zoom (1x - 8x)</div>
+              </div>
+
+              <div class="pacs-canvas-viewport">
+                <canvas id="pacs-viewport-canvas" width="512" height="512"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 5: PHARMACY, FORMULARY & INTERACTIONS
+             ========================================================================= -->
+        <div id="view-pharmacy" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Hospital Pharmacy & Drug Interaction Engine</h2>
+              <div class="text-xs text-muted">National Formulary Stock Control & Pharmacokinetic Interaction Matrix</div>
+            </div>
+            <div class="flex gap-2">
+              <button id="pharmacy-restock-btn" class="btn btn-secondary">📦 Restock Medication</button>
+            </div>
+          </div>
+
+          <!-- Multi-Drug Interaction Checker Bar -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <span class="card-title">🛡️ Real-Time Multi-Drug Interaction Safety Scanner</span>
+              <button id="pharmacy-check-interaction-btn" class="btn btn-sm btn-primary">Run Safety Check</button>
+            </div>
+            <div id="pharmacy-selected-drugs-list" class="flex flex-wrap gap-2 mb-3"></div>
+            <div id="pharmacy-interaction-results"></div>
+          </div>
+
+          <!-- Two Columns: Formulary & Inpatient Dispense Queue -->
+          <div class="grid grid-cols-3 gap-4">
+            <div class="card" style="grid-column: span 2;">
+              <div class="card-header">
+                <span class="card-title">💊 National Drug Formulary & Inventory Stock</span>
+                <input type="text" id="pharmacy-drug-search" class="form-input" style="max-width: 250px; padding: 4px 10px; font-size: 12px;" placeholder="Search formulary / ATC...">
+              </div>
+              <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+                <table class="clinical-table">
+                  <thead>
+                    <tr>
+                      <th>Drug Name</th>
+                      <th>ATC</th>
+                      <th>Category</th>
+                      <th>Stock</th>
+                      <th>Cost</th>
+                      <th>Retail</th>
+                      <th>Expiry</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pharmacy-inventory-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">📋 Active Inpatient Dispensing Queue</span>
+              </div>
+              <div id="pharmacy-dispense-queue-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 6: LABORATORY INFORMATION SYSTEM (LIS)
+             ========================================================================= -->
+        <div id="view-laboratory" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Laboratory Information System (LIS)</h2>
+              <div class="text-xs text-muted">Specimen Accessioning, Result Validation & Panic Alert Flags</div>
+            </div>
+            <div class="flex gap-3">
+              <select id="lis-patient-select" class="form-select" style="min-width: 260px;"></select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">🧪 Specimen Result Entry & Accessioning</span>
+                <select id="lis-catalog-select" class="form-select" style="width: auto;"></select>
+              </div>
+              <div id="lis-panel-input-container"></div>
+              <button id="lis-release-results-btn" class="btn btn-primary w-full mt-4">Verify & Release Lab Results</button>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">📑 Released Patient Lab Cumulative Reports</span>
+              </div>
+              <div id="lis-patient-history-container" style="max-height: 520px; overflow-y: auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 7: OUTPATIENT APPOINTMENTS & DOCTOR DIRECTORY
+             ========================================================================= -->
+        <div id="view-appointments" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Outpatient Appointments & Doctor Directory</h2>
+              <div class="text-xs text-muted">Physician Availability Matrix & Booking Wizard</div>
+            </div>
+            <div class="flex gap-2">
+              <select id="apt-specialty-filter" class="form-select" style="width: auto;">
+                <option value="all">All Specialties</option>
+                <option value="Cardiology">Cardiology</option>
+                <option value="Neurology">Neurology</option>
+                <option value="Pediatrics">Pediatrics</option>
+                <option value="Orthopedic Surgery">Orthopedic Surgery</option>
+                <option value="Medical Oncology">Oncology</option>
+                <option value="Dermatology">Dermatology</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <!-- Doctor List Column -->
+            <div class="card" style="max-height: 550px; overflow-y: auto;">
+              <div class="card-header">
+                <span class="card-title">👨‍⚕️ Attending Specialists</span>
+              </div>
+              <div id="apt-doctor-cards-container"></div>
+            </div>
+
+            <!-- Booking Slot Picker Column -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">📅 Schedule Consultation</span>
+              </div>
+              <div id="apt-selected-doc-summary" class="text-xs text-sky-400 mb-3 font-semibold"></div>
+
+              <div class="form-group">
+                <label class="form-label">Consultation Date</label>
+                <input type="date" id="apt-booking-date" class="form-input">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Available Time Slots</label>
+                <div id="apt-slots-container" class="flex flex-wrap gap-2"></div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Patient</label>
+                <select id="apt-patient-select" class="form-select">
+                  <option value="PAT-1001">Eleanor Vance (MRN-884920)</option>
+                  <option value="PAT-1002">Marcus Sterling (MRN-339201)</option>
+                  <option value="PAT-1003">Sofia Rodriguez (MRN-190483)</option>
+                  <option value="PAT-1005">Chloe Kim (MRN-602918)</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Visit Type</label>
+                <select id="apt-visit-type" class="form-select">
+                  <option value="In-Person Outpatient Visit">In-Person Outpatient Visit</option>
+                  <option value="Virtual Telehealth Consultation">Virtual Telehealth Video Consultation</option>
+                  <option value="Post-Op Follow-Up">Post-Op Suture Removal & Follow-up</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Reason for Visit</label>
+                <input type="text" id="apt-booking-reason" class="form-input" placeholder="e.g. Follow-up after medication adjustment">
+              </div>
+
+              <button id="apt-confirm-booking-btn" class="btn btn-primary w-full mt-2">Confirm & Book Appointment</button>
+            </div>
+
+            <!-- Scheduled Appointments List -->
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">📜 Master Booking Calendar</span>
+              </div>
+              <div class="table-responsive" style="max-height: 480px; overflow-y: auto;">
+                <table class="clinical-mini-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Patient</th>
+                      <th>Doctor</th>
+                      <th>Date / Time</th>
+                      <th>Type</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="apt-scheduled-list-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 8: VIRTUAL TELEHEALTH SUITE
+             ========================================================================= -->
+        <div id="view-telehealth" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Encrypted Virtual Telehealth Suite</h2>
+              <div class="text-xs text-muted">Simulated Video Stream with Real-Time Medical Transcription</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="telehealth-call-status" class="badge badge-secondary">DISCONNECTED</span>
+              <span id="telehealth-call-timer" class="font-mono text-sm font-bold text-sky-400">00:00</span>
+            </div>
+          </div>
+
+          <div class="telehealth-grid">
+            <!-- Video Stage -->
+            <div class="telehealth-video-pane">
+              <div class="telehealth-canvas-wrapper">
+                <canvas id="telehealth-video-canvas" width="640" height="380"></canvas>
+              </div>
+              <div class="telehealth-controls-bar">
+                <div class="flex gap-2">
+                  <button id="telehealth-start-btn" class="btn btn-primary">📹 Launch Consultation</button>
+                  <button id="telehealth-end-btn" class="btn btn-danger" style="display: none;">🔴 Disconnect Call</button>
+                  <select id="telehealth-filter-select" class="form-select" style="width: auto; font-size: 11px;">
+                    <option value="standard">Filter: Standard Color</option>
+                    <option value="derm_contrast">Filter: Derm High Contrast</option>
+                    <option value="thermal">Filter: Thermal Simulation</option>
+                  </select>
+                </div>
+                <div class="text-xs text-muted">🔒 TLS 1.3 End-to-End Encrypted</div>
+              </div>
+            </div>
+
+            <!-- Real-time Transcription & Chat -->
+            <div class="telehealth-sidebar-pane">
+              <div class="card-header" style="padding: 12px 16px; margin: 0;">
+                <span class="card-title text-xs">🎙️ Automated Clinical Transcription</span>
+              </div>
+              <div id="telehealth-transcript-box" class="telehealth-transcript-box">
+                <div class="text-xs text-muted italic">Transcript stream will begin automatically once call is launched...</div>
+              </div>
+              <div style="border-top: 1px solid var(--border-color); padding: 10px;">
+                <div class="flex gap-2">
+                  <input type="text" id="telehealth-chat-input" class="form-input text-xs" placeholder="Type doctor note / message...">
+                  <button id="telehealth-chat-send" class="btn btn-sm btn-primary">Send</button>
+                </div>
+                <div id="telehealth-chat-messages" style="max-height: 80px; overflow-y: auto; margin-top: 6px;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 9: AI CLINICAL SYMPTOM CHECKER
+             ========================================================================= -->
+        <div id="view-symptom-checker" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>AI Clinical Symptom Checker & Triage Wizard</h2>
+              <div class="text-xs text-muted">Rule-Based Emergency Severity Assessment & Specialist Referral</div>
+            </div>
+            <span id="sym-step-indicator" class="badge badge-primary font-bold">Step 1 of 4</span>
+          </div>
+
+          <div class="card" style="max-width: 720px; margin: 0 auto;">
+            <!-- Step 1: Chief Complaint Selection -->
+            <div id="sym-step-1">
+              <h3 class="mb-3">What is your primary symptom or reason for seeking care?</h3>
+              <div class="grid grid-cols-2 gap-3 mb-4">
+                <label class="p-3 border rounded-md cursor-pointer hover:bg-slate-800 flex items-center gap-3">
+                  <input type="radio" name="chiefComplaint" value="chest_pain">
+                  <div>
+                    <strong>Chest Pain / Tightness</strong>
+                    <div class="text-xs text-muted">Discomfort, heaviness, pressure in chest</div>
+                  </div>
+                </label>
+                <label class="p-3 border rounded-md cursor-pointer hover:bg-slate-800 flex items-center gap-3">
+                  <input type="radio" name="chiefComplaint" value="headache">
+                  <div>
+                    <strong>Severe Headache / Migraine</strong>
+                    <div class="text-xs text-muted">Throbbing pain, visual aura, photophobia</div>
+                  </div>
+                </label>
+                <label class="p-3 border rounded-md cursor-pointer hover:bg-slate-800 flex items-center gap-3">
+                  <input type="radio" name="chiefComplaint" value="shortness_of_breath">
+                  <div>
+                    <strong>Shortness of Breath (Dyspnea)</strong>
+                    <div class="text-xs text-muted">Difficulty breathing, wheezing, cough</div>
+                  </div>
+                </label>
+                <label class="p-3 border rounded-md cursor-pointer hover:bg-slate-800 flex items-center gap-3">
+                  <input type="radio" name="chiefComplaint" value="joint_pain">
+                  <div>
+                    <strong>Joint or Musculoskeletal Pain</strong>
+                    <div class="text-xs text-muted">Knee swelling, back pain, sprain</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Step 2: Duration & Severity -->
+            <div id="sym-step-2" style="display: none;">
+              <h3 class="mb-3">How long have you had this symptom, and what is the severity?</h3>
+              <div class="form-group mb-4">
+                <label class="form-label">Onset & Duration</label>
+                <select id="sym-duration-select" class="form-select">
+                  <option value="acute_minutes">Sudden onset (within past 30 minutes)</option>
+                  <option value="acute_hours">Started today (several hours ago)</option>
+                  <option value="days">1 to 3 days</option>
+                  <option value="chronic">More than 2 weeks (Chronic / Subacute)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Pain / Discomfort Intensity (0 - 10 Scale)</label>
+                <input type="range" id="sym-severity-slider" min="1" max="10" value="5" class="w-full">
+                <div class="flex justify-between text-xs text-muted mt-1">
+                  <span>1 (Mild)</span>
+                  <span>5 (Moderate)</span>
+                  <span>10 (Worst Pain Imaginable)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Red Flag Screening -->
+            <div id="sym-step-3" style="display: none;">
+              <h3 class="mb-3 text-danger">⚠️ Red Flag Symptom Screening</h3>
+              <p class="text-xs text-muted mb-3">Please check any emergency symptoms you are currently experiencing:</p>
+              <div class="flex flex-col gap-2 mb-4">
+                <label class="flex items-center gap-3 p-2 rounded hover:bg-slate-800 cursor-pointer">
+                  <input type="checkbox" class="redflag-checkbox" value="radiation_arm_jaw">
+                  <span>Chest pain radiating to left arm, neck, or jaw</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded hover:bg-slate-800 cursor-pointer">
+                  <input type="checkbox" class="redflag-checkbox" value="syncope_fainting">
+                  <span>Loss of consciousness, syncope, or severe sudden dizziness</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded hover:bg-slate-800 cursor-pointer">
+                  <input type="checkbox" class="redflag-checkbox" value="sudden_weakness">
+                  <span>Sudden facial drooping, arm weakness, or slurred speech</span>
+                </label>
+                <label class="flex items-center gap-3 p-2 rounded hover:bg-slate-800 cursor-pointer">
+                  <input type="checkbox" class="redflag-checkbox" value="cyanosis_lips">
+                  <span>Bluish lips or fingertips (Cyanosis / Severe oxygen drop)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Step 4: Diagnostic Outcome -->
+            <div id="sym-step-4" style="display: none;">
+              <div id="sym-results-container"></div>
+            </div>
+
+            <!-- Navigation Controls -->
+            <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-700">
+              <button id="sym-prev-btn" class="btn btn-secondary" style="display: none;">← Back</button>
+              <button id="sym-reset-btn" class="btn btn-outline-secondary">Reset Questionnaire</button>
+              <button id="sym-next-btn" class="btn btn-primary">Continue →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 10: HOSPITAL WARD FLOOR PLAN & BED MANAGEMENT
+             ========================================================================= -->
+        <div id="view-floorplan" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Hospital Ward Floor Plan & Bed Allocation Matrix</h2>
+              <div class="text-xs text-muted">Interactive Ward Map, Sanitization Tracking & Bed Status Toggler</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="form-label mb-0">Select Ward / Floor:</label>
+              <select id="floorplan-ward-select" class="form-select" style="min-width: 320px;"></select>
+            </div>
+          </div>
+
+          <div id="floorplan-ward-summary" class="card mb-4 text-xs"></div>
+          <div id="floorplan-grid-container"></div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 11: MEDICAL BILLING & CLAIMS ADJUDICATION
+             ========================================================================= -->
+        <div id="view-billing" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Revenue Cycle, Medical Billing & Insurance Claims</h2>
+              <div class="text-xs text-muted">Automated 837P Electronic Claim Adjudication & Printable Patient Statements</div>
+            </div>
+            <div class="flex gap-2">
+              <select id="billing-status-filter" class="form-select" style="width: auto;">
+                <option value="all">All Invoices</option>
+                <option value="Paid">Settled / Paid</option>
+                <option value="Pending">Pending Claims</option>
+              </select>
+              <button id="billing-create-invoice-btn" class="btn btn-primary">+ Generate Invoice</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div class="card" style="grid-column: span 2;">
+              <div class="card-header">
+                <span class="card-title">💳 Patient Billing Statements & Invoices</span>
+              </div>
+              <div class="table-responsive">
+                <table class="clinical-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice ID</th>
+                      <th>Patient</th>
+                      <th>Date</th>
+                      <th>Total</th>
+                      <th>Ins. Paid</th>
+                      <th>Balance Due</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="billing-invoices-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">🏛️ Active Payer Networks (Clearinghouse)</span>
+              </div>
+              <div id="billing-payers-list" style="max-height: 480px; overflow-y: auto;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 12: HOSPITAL ANALYTICS & EPIDEMIOLOGICAL INTELLIGENCE
+             ========================================================================= -->
+        <div id="view-analytics" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>Executive Analytics & Epidemiological Intelligence</h2>
+              <div class="text-xs text-muted">Hospital Performance Metrics & Regional Viral Surveillance</div>
+            </div>
+          </div>
+
+          <!-- Top Metric Cards -->
+          <div class="grid grid-cols-4 gap-4 mb-4">
+            <div class="card text-center">
+              <div class="text-xs text-muted uppercase font-bold">Overall Bed Occupancy</div>
+              <div id="kpi-bed-occupancy" class="text-2xl font-bold text-sky-400 mt-2">78.4%</div>
+            </div>
+            <div class="card text-center">
+              <div class="text-xs text-muted uppercase font-bold">Active Patient Census</div>
+              <div id="kpi-patient-census" class="text-2xl font-bold text-success mt-2">6 Active</div>
+            </div>
+            <div class="card text-center">
+              <div class="text-xs text-muted uppercase font-bold">Average ED Triage Wait</div>
+              <div id="kpi-ed-waittime" class="text-2xl font-bold text-warning mt-2">18.4 mins</div>
+            </div>
+            <div class="card text-center">
+              <div class="text-xs text-muted uppercase font-bold">YTD Invoiced Revenue</div>
+              <div id="kpi-total-revenue" class="text-2xl font-bold text-primary mt-2">$6,730.00</div>
+            </div>
+          </div>
+
+          <!-- Charts Grid -->
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="card">
+              <canvas id="analytics-occupancy-canvas" height="220" style="width: 100%; height: 220px;"></canvas>
+            </div>
+            <div class="card">
+              <canvas id="analytics-ed-wait-canvas" height="220" style="width: 100%; height: 220px;"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <canvas id="analytics-epi-canvas" height="200" style="width: 100%; height: 200px;"></canvas>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 13: HIPAA AUDIT SECURITY LOG
+             ========================================================================= -->
+        <div id="view-audit" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>HIPAA Security Audit Trail & Access Logs</h2>
+              <div class="text-xs text-muted">Immutable Ledger of Electronic Protected Health Information (ePHI) Events</div>
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="audit-filter-input" class="form-input" style="max-width: 260px; font-size: 12px;" placeholder="Search user, action, patient ID...">
+              <button id="audit-export-csv-btn" class="btn btn-secondary">📥 Export CSV Audit</button>
+              <button id="audit-clear-btn" class="btn btn-outline-secondary">Reset Logs</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive" style="max-height: 520px; overflow-y: auto;">
+              <table class="clinical-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Log ID</th>
+                    <th>Actor / Persona</th>
+                    <th>Action Code</th>
+                    <th>Resource Target</th>
+                    <th>Audit Details</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-logs-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- =========================================================================
+             MODULE 14: SYSTEM SETTINGS & RBAC SWITCHER
+             ========================================================================= -->
+        <div id="view-settings" class="module-view">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h2>System Settings, Security & Data Backup</h2>
+              <div class="text-xs text-muted">Role-Based Access Control (RBAC), Themes & Local Database Management</div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">👤 Role-Based Access Control (RBAC) Switcher</span>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Active User Persona & Clinical Role</label>
+                <select id="settings-role-select" class="form-select">
+                  <option value="doctor">Senior Attending Physician (Full Clinical Access)</option>
+                  <option value="nurse">Triage / Ward Nurse (Vitals & Rapid Intake)</option>
+                  <option value="pharmacist">Staff Pharmacist (Dispensing & Formulary)</option>
+                  <option value="lab_tech">Clinical Lab Scientist (LIS Result Release)</option>
+                  <option value="billing">Billing Specialist (Invoicing & Claims)</option>
+                  <option value="patient">Patient Portal User (Self-Scheduling & Vitals)</option>
+                  <option value="admin">Chief Medical Officer (System Administrator)</option>
+                </select>
+              </div>
+
+              <div class="form-group mt-4">
+                <label class="form-label">Visual Clinical Theme</label>
+                <select id="settings-theme-select" class="form-select">
+                  <option value="dark">Clinical Dark (Cyber Hospital Mode)</option>
+                  <option value="light">Clean Hospital Light</option>
+                  <option value="high-contrast">High-Contrast High-Acuity Mode</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">💾 Local Database Persistence & Maintenance</span>
+              </div>
+              <p class="text-xs text-secondary mb-4 leading-relaxed">
+                OmniHealth OS runs 100% locally in your browser. All modified patient vitals, SOAP notes, appointments, and dispensed prescriptions persist in IndexedDB and LocalStorage with zero external servers or API keys.
+              </p>
+              <div class="flex flex-col gap-3">
+                <button id="settings-backup-btn" class="btn btn-primary">📥 Download Full Database JSON Backup</button>
+                <div class="form-group">
+                  <label class="form-label text-xs">Restore from JSON Backup File</label>
+                  <input type="file" id="settings-import-file" class="form-input" accept=".json">
+                </div>
+                <button id="settings-factory-reset-btn" class="btn btn-danger mt-2">⚠️ Factory Reset Database to Default Mock Records</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JavaScript Modules (Loaded in dependency order) -->
+  <script src="js/data/mock-patients.js"></script>
+  <script src="js/data/mock-doctors.js"></script>
+  <script src="js/data/mock-drugs.js"></script>
+  <script src="js/data/mock-drugs-expanded.js"></script>
+  <script src="js/data/mock-icd10.js"></script>
+  <script src="js/data/mock-icd10-expanded.js"></script>
+  <script src="js/data/mock-clinical-pathways.js"></script>
+  <script src="js/data/mock-labs.js"></script>
+  <script src="js/data/mock-departments.js"></script>
+  <script src="js/data/mock-insurance.js"></script>
+  <script src="js/data/mock-scans.js"></script>
+  
+  <script src="js/storage.js"></script>
+  <script src="js/services/audio-service.js"></script>
+  <script src="js/services/chart-service.js"></script>
+  <script src="js/services/export-service.js"></script>
+  <script src="js/services/notification-service.js"></script>
+  
+  <script src="js/engines/fhir-hl7-interop-engine.js"></script>
+  <script src="js/engines/clinical-decision-rules-engine.js"></script>
+  <script src="js/engines/dicom-pacs-processing-engine.js"></script>
+  <script src="js/engines/pharmacokinetics-engine.js"></script>
+  <script src="js/engines/telemetry-dsp-engine.js"></script>
+  
+  <script src="js/modules/clinical-calc.js"></script>
+  <script src="js/modules/ehr.js"></script>
+  <script src="js/modules/emergency.js"></script>
+  <script src="js/modules/telemetry-monitor.js"></script>
+  <script src="js/modules/pacs-viewer.js"></script>
+  <script src="js/modules/pharmacy.js"></script>
+  <script src="js/modules/laboratory.js"></script>
+  <script src="js/modules/appointments.js"></script>
+  <script src="js/modules/telehealth.js"></script>
+  <script src="js/modules/symptom-checker.js"></script>
+  <script src="js/modules/floorplan.js"></script>
+  <script src="js/modules/billing.js"></script>
+  <script src="js/modules/analytics.js"></script>
+  <script src="js/modules/audit-logger.js"></script>
+  <script src="js/modules/settings.js"></script>
+  
+  <script src="js/app.js"></script>
+</body>
+</html>
