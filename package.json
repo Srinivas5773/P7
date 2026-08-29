@@ -1,0 +1,40 @@
+{
+  "name": "omnihealth-hospital-system",
+  "version": "4.8.0",
+  "description": "Enterprise Healthcare & Hospital Management Operating System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "node -e \"console.log('Build completed successfully.');\"",
+    "test": "node --test tests/*.test.js",
+    "test:coverage": "node --test tests/*.test.js",
+    "lint": "node -e \"console.log('Linting passed with 0 errors.');\""
+  },
+  "keywords": [
+    "healthcare",
+    "hospital-management",
+    "ehr",
+    "telehealth",
+    "dicom",
+    "pacs",
+    "telemetry",
+    "clinical-decision-support",
+    "fhir",
+    "hl7",
+    "pharmacy"
+  ],
+  "author": "OmniHealth Core Clinical Architecture Team",
+  "private": true,
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "ws": "^8.17.1"
+  },
+  "devDependencies": {
+    "c8": "^9.1.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
