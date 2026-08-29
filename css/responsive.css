@@ -1,0 +1,112 @@
+/**
+ * OmniHealth OS - Responsive Media Queries & Print Stylesheet
+ */
+
+/* Tablets and small desktops */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 210px;
+  }
+
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pacs-workstation-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .telehealth-grid {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .telemetry-hud-sidebar {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Mobile Devices */
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .sidebar-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding: 8px 12px;
+  }
+
+  .sidebar-nav-item {
+    white-space: nowrap;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .nav-section-title {
+    display: none;
+  }
+
+  .app-topbar {
+    padding: 0 14px;
+  }
+
+  .topbar-left {
+    max-width: 200px;
+  }
+
+  .live-clock {
+    display: none;
+  }
+
+  .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .ehr-dossier-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .telemetry-hud-sidebar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .app-content {
+    padding: 14px;
+  }
+}
+
+/* Print Specific Media Query */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  .app-sidebar, .app-topbar, .toast-container, .btn, .clinical-modal-backdrop {
+    display: none !important;
+  }
+
+  .app-main, .app-content {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  .card {
+    border: 1px solid #000 !important;
+    box-shadow: none !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+}
